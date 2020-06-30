@@ -1,9 +1,9 @@
 """
-Enphase2emon will receive the /stream/meter chunked http stream from an 
-Enphase Envoy s and transfer the data to emoncms running locally.
+Enphase2Emon will receive the /stream/meter chunked http stream from an 
+Enphase Envoy s and transfer the data to EmonCMS running locally.
 
 
-Enphase2emon.py is the core program.
+Enphase2Emon.py is the core program.
 
 Also uses
 ReceiveEnphaseStream.py
