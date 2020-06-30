@@ -3,8 +3,8 @@ Description=Enphase2emon service
 After=network.target
 
 [Service]
-ExecStart=/home/pi/Enphase2emon/E2eService.sh
-WorkingDirectory=/home/pi/Enphase2emon
+ExecStart=/home/pi/Enphase2emon/E2EDaemon.py
+WorkingDirectory=/home/pi/Enphase2emon/
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
