@@ -6,25 +6,25 @@
 # Put the .pid file some place nice
  
 import sys
-import time
-from GenericDaemon import Daemon
 
-DAEMON_LOCATION = '/tmp/daemon-example.pid'
- 
-class MyDaemon(Daemon):
+from GenericDaemon import Daemon
+import Enphase2Emon
+
+DAEMON_PID_LOCATION = '/tmp/daemon-Enphase2Emon.pid'
+
+class E2EDaemon(Daemon):
     def run(self):
-        while True:
-            time.sleep(1)
+        Enphase2Emon.MainLoop()
  
 if __name__ == "__main__":
-    daemon = MyDaemon(DAEMON_LOCATION)
+    TheDaemon = E2EDaemon(DAEMON_PID_LOCATION)
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
-            daemon.start()
+            TheDaemon.start()
         elif 'stop' == sys.argv[1]:
-            daemon.stop()
+            TheDaemon.stop()
         elif 'restart' == sys.argv[1]:
-            daemon.restart()
+            TheDaemon.restart()
         else:
             print "Unknown command"
             sys.exit(2)
