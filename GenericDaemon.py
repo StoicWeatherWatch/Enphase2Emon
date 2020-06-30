@@ -14,6 +14,7 @@ http://www.jejik.com/files/examples/daemon3x.py
 The .pid file will hold the process ID. Put it some place nice.
 
 """
+#__version__ = "0.0.2"
 
 #https://web.archive.org/web/20160305151936/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 #https://web.archive.org/web/20160320091458/http://www.jejik.com/files/examples/daemon3x.py
