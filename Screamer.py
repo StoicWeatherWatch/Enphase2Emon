@@ -11,6 +11,8 @@ Instantiating Screamer involves sending it settings for how much to communicate 
 #__version__ = "0.0.1"
 __author__ = "SWW"
 
+LOCAL_LOG_LOCATION = '/home/pi/LocalLog.txt'
+
 DEFAULTS = {'Local_Log':'',
             'Log_Debug_Msg':False,
             'Print_Debug_Msg_To_Terminal':False}
@@ -19,15 +21,15 @@ DONOTHING = {'Local_Log':'',
                 'Log_Debug_Msg':False,
                 'Print_Debug_Msg_To_Terminal':False}
 
-KITCHENSINK = {'Local_Log':'/home/pi/LocalLog.txt',
+KITCHENSINK = {'Local_Log':LOCAL_LOG_LOCATION,
                 'Log_Debug_Msg':True,
                 'Print_Debug_Msg_To_Terminal':True}
 
-FULLLOG = {'Local_Log':'/home/pi/LocalLog.txt',
+FULLLOG = {'Local_Log':LOCAL_LOG_LOCATION,
             'Log_Debug_Msg':True,
             'Print_Debug_Msg_To_Terminal':False}
 
-LOCALONLY = {'Local_Log':'/home/pi/LocalLog.txt',
+LOCALONLY = {'Local_Log':LOCAL_LOG_LOCATION,
             'Log_Debug_Msg':False,
             'Print_Debug_Msg_To_Terminal':False}
 
