@@ -35,5 +35,5 @@ config['Data'] = DataDict
 
 
 
-with open('Enphase2emon.cfg', 'w') as configfile:
+with open('Enphase2Emon.cfg', 'w') as configfile:
     config.write(configfile)
