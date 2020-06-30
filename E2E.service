@@ -1,0 +1,20 @@
+[Unit]
+Description=Enphase2emon service
+After=network.target
+
+[Service]
+ExecStart=/home/pi/Enphase2emon/E2EDaemon.py start
+ExecReload=/home/pi/Enphase2emon/E2EDaemon.py restart
+ExecStop=/home/pi/Enphase2emon/E2EDaemon.py stop
+WorkingDirectory=/home/pi/Enphase2emon/
+StandardOutput=inherit
+StandardError=inherit
+Restart=on-abnormal
+RestartSec=10
+User=pi
+Type=forking
+PIDFile=/tmp/daemon-Enphase2Emon.pid
+
+
+[Install]
+WantedBy=multi-user.target
