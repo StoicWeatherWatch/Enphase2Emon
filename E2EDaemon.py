@@ -20,8 +20,6 @@ class E2EDaemon(Daemon):
  
  # This works for running directly. However a service does not call with 2 arg - unless you put them in the .service file
 if __name__ == "__main__":
-    self.Scream.dbg('E2EDaemon - __main__','Starting')
-    self.Scream.dbg('E2EDaemon - __main__','sys.argv {}'.format(sys.argv))
    
     TheDaemon = E2EDaemon(DAEMON_PID_LOCATION)
     
