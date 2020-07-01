@@ -124,7 +124,7 @@ class Screamer:
             with open(self.LocalLog,'a') as LogFile:
                 LogFile.write('{Program} - {SubProcess} Alert: {Msg}\n'.format(Program = self.ProgramName, SubProcess = Caller, Msg = LineIn))
                 
-    def TEST(self),
+    def TEST(self):
         try:
             log.info("Trying to do something")
             raise Exception('foo')
