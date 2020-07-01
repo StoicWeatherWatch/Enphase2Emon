@@ -8,8 +8,13 @@ Instantiating Screamer involves sending it settings for how much to communicate 
 
 """
 
-#__version__ = "0.0.1"
+__version__ = "0.0.3"
 __author__ = "SWW"
+
+import logging
+from systemd.journal import JournalHandler as systemdJournalHandler
+
+#import uuid
 
 LOCAL_LOG_LOCATION = '/home/pi/LocalLog.txt'
 
@@ -51,6 +56,13 @@ class Screamer:
             self.LocalLog = SettingsDict['Local_Log']
         else:
             self.LocalLog = None
+        if SettingsDict['Local_Log'] is None:
+            self.LocalLog = None
+            
+        
+        self.Log = logging.getLogger()
+        self.Log.addHandler(systemdJournalHandler())
+        self.Log.setLevel(logging.DEBUG)
         
     
     @classmethod
@@ -111,4 +123,11 @@ class Screamer:
         if self.LocalLog is not None:
             with open(self.LocalLog,'a') as LogFile:
                 LogFile.write('{Program} - {SubProcess} Alert: {Msg}\n'.format(Program = self.ProgramName, SubProcess = Caller, Msg = LineIn))
+                
+    def TEST(self),
+        try:
+            log.info("Trying to do something")
+            raise Exception('foo')
+        except:
+            logger.exception("Test Exception %s", 1)
     
