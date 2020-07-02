@@ -25,12 +25,17 @@ DataDict = {'production_p':True,
 
 SettingsDict = {'UpdateInterval':5,
                 'Smoothing':False}
+
+ScreamDict = {'Log_Debug_Msg':False,
+				'Print_Debug_Msg_To_Terminal':True}
                 
 config['Envoy'] = EnvoyDict
 config['Emoncms']   = EmoncmsDict
 config['Settings']  = SettingsDict
 
 config['Data'] = DataDict
+
+config['Screamer'] = ScreamDict
 
 
 
