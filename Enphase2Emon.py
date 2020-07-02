@@ -10,11 +10,11 @@ ReceiveEnphaseStream.py
 WriteToEmoncmsHTTP.py
 """
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 __author__ = "SWW"
 
 # In Daemon form, this must be given the full path. 
-CONFIG_FILE = '/home/pi/Enphase2emon/Enphase2Emon.cfg'
+CONFIG_FILE = '/home/pi//Enphase2emon/Enphase2Emon.cfg'
 
 # Local Files
 import ReceiveEnphaseStream
