@@ -10,7 +10,7 @@ ReceiveEnphaseStream.py
 WriteToEmoncmsHTTP.py
 """
 
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 __author__ = "SWW"
 
 # In Daemon form, this must be given the full path. 
@@ -24,6 +24,8 @@ import WriteToEmoncmsHTTP
 import json
 import configparser
 import time
+import signal
+import sys
 
 import logging
 from systemd.journal import JournalHandler as systemdJournalHandler
@@ -42,9 +44,11 @@ from systemd.journal import JournalHandler as systemdJournalHandler
 # Switch to Python Daemon
 # Catch Exceptions
 # Notice a lost stream
-# Switch prints to log 
 
-# Read config file
+
+
+
+
 # TODO use try except
 def MainLoop():
     #Setup Loging
@@ -63,21 +67,15 @@ def MainLoop():
     # Continue with logging setup
     if config['Logging']['log_level'] == 'DEBUG':
         LogLevel = logging.DEBUG
-        LogLevelN = 10
-        print('DEBUG')
     elif config['Logging']['log_level'] == 'INFO':
         LogLevel = logging.INFO
-        LogLevelN = 20
     elif config['Logging']['log_level'] == 'WARNING':
         LogLevel = logging.WARNING
-        LogLevelN = 30
     elif config['Logging']['log_level'] == 'CRITICAL':
         LogLevel = logging.CRITICAL
-        LogLevelN = 50
     else:
         # default and if not correct config is ERROR
         LogLevel = logging.ERROR
-        LogLevelN = 40
         
     
         
@@ -86,10 +84,11 @@ def MainLoop():
     # Are we logging to a file
     if len(config['Logging']['Log_File']) > 1:
         FLHandler = logging.FileHandler(config['Logging']['Log_File'])
-        print(config['Logging']['Log_File'])
         FLHandler.setLevel(LogLevel)
         FLHandler.setFormatter(LGformatter)
         LG.addHandler(FLHandler)
+    
+    # Logging to systemd journal
     if config['Logging'].getboolean('Log_To_systemd_journal', fallback=False):
         SJHandler = systemdJournalHandler(level=LogLevel)
         SJHandler.setFormatter(LGformatter)
@@ -98,13 +97,50 @@ def MainLoop():
     # This line is necessary because we must also set the minimum for the logger overall
     LG.setLevel(LogLevel)
     
-    LG.critical(' critical test')
-    LG.error(' error test')
-    LG.warning(' warning test')
-    LG.info(' info test')
-    LG.debug(' debug test')
-
+    LG.info('Enphase2Emon MainLoop() has started. Logging on and config file loaded')
+    LG.debug('config.read found {}'.format(ListOfRead))
     
+    #LG.critical(' critical test')
+    #LG.error(' error test')
+    #LG.warning(' warning test')
+    #LG.info(' info test')
+    #LG.debug(' debug test')
+    #LG.exception(msg, *args, **kwargs)
+    
+    # Signal Handeler
+    SoftKillReceived = False
+    SignalNumReceived = 0
+    SignalFrameReceived = None
+    
+    def receiveSIGTERM(signalNumber, frame):
+        LG.info('Received signalNumber: {} - Will wait for a good place'.format(signalNumber))
+        # nonlocal accesses the variable in the outer scope. In this case MainLoop()
+        nonlocal SignalNumReceived
+        SignalNumReceived = signalNumber
+        nonlocal SignalFrameReceived
+        SignalFrameReceived = frame
+        nonlocal SoftKillReceived
+        SoftKillReceived = True
+        
+    def receiveSIGINT(signalNumber, frame):
+        LG.info('Received signalNumber: {} - Will wait for a good place'.format(signalNumber))
+        nonlocal SignalNumReceived
+        SignalNumReceived = signalNumber
+        nonlocal SignalFrameReceived
+        SignalFrameReceived = frame
+        nonlocal SoftKillReceived
+        SoftKillReceived = True
+    
+    signal.signal(signal.SIGTERM, receiveSIGTERM)
+    signal.signal(signal.SIGINT, receiveSIGINT)
+    
+    def GracefulExitCheck():
+        nonlocal SoftKillReceived
+        nonlocal SignalNumReceived
+        if SoftKillReceived:
+            LG.info('Executing signalNumber: {}'.format(SignalNumReceived))
+            LG.info('EXITING')
+            sys.exit(0)
 
     # print(config['Envoy']['ipadd'])
     # print(type(config['Envoy']['ipadd']))
@@ -125,27 +161,32 @@ def MainLoop():
 
     TimeLast = time.time()
     LG.debug('MainLoop TimeLast {}'.format(TimeLast))
-
+    
+    GracefulExitCheck()
+    
     # Loop over stream
     for LineIn in ReceiveEnphaseStream.DataStream(config['Envoy']['ipadd'],
                                                     config['Envoy']['path'],
                                                     config['Envoy']['userid'],
                                                     config['Envoy']['userpass']):
-        #print(LineIn.decode("utf-8")[6:])
-        #print('\n')
+        
+        GracefulExitCheck()
+        
         LG.debug('MainLoop LineIn received')
+        
         # The output has initial characters that need to be striped. Thus StripPrefix
         LineDict = json.loads(LineIn.decode("utf-8")[StripPrefix:])
         LG.debug('MainLoop LineDict decoded')
-        #print(LineDict)
-        #print('\n')
-        #print(LineDict["production"]["ph-a"]["p"])
-        #print(type(LineDict["production"]["ph-a"]["p"]))
-        #print('\n')
+        
+        GracefulExitCheck()
+        
         if (time.time() - TimeLast) > PostInter:
             LG.debug('MainLoop time good - posting')
             poster.PostToEMON(LineDict)
             TimeLast = time.time()
+        
+        GracefulExitCheck()
+        
             
             
 
