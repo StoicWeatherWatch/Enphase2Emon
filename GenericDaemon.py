@@ -1,10 +1,10 @@
 """
 Generic linux daemon base class for python 3.x.
 
-From original Author:
-    This is really basic stuff and not very original. It's Public Domain, so do with it as you please.
+From original Author (in reference to the file on which this file is based):
+    "This is really basic stuff and not very original. It's Public Domain, so do with it as you please."
     
-This may be altered from the original form.
+This has bee altered from the original form.
 https://web.archive.org/web/20160305151936/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 https://web.archive.org/web/20160320091458/http://www.jejik.com/files/examples/daemon3x.py
 
@@ -14,7 +14,8 @@ http://www.jejik.com/files/examples/daemon3x.py
 The .pid file will hold the process ID. Put it some place nice.
 
 """
-#__version__ = "0.0.2"
+__version__ = "0.0.5"
+__author__ = "SWW"
 
 #https://web.archive.org/web/20160305151936/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 #https://web.archive.org/web/20160320091458/http://www.jejik.com/files/examples/daemon3x.py
@@ -25,7 +26,13 @@ import time
 import atexit
 import signal
 
+import logging
+from systemd.journal import JournalHandler as systemdJournalHandler
+
 from Screamer import Screamer
+
+# Number of seconds to try to kill the daemon nicely on stop
+TIME_OUT = 10
 
 class Daemon:
     """A generic daemon class.
@@ -38,8 +45,10 @@ class Daemon:
 
     def __init__(self, pidfile): 
         self.pidfile = pidfile
+        self.TimeOut = TIME_OUT
         self.Scream = Screamer.LocalOnly('Generic Daemon')
         self.Scream.msg('__init__','Done')
+
     
     def daemonize(self):
         """Deamonize class. UNIX double fork mechanism.
@@ -114,15 +123,14 @@ class Daemon:
         self.Scream.msg('start','Starting')
 
         # Check for a pidfile to see if the daemon already runs
-        # TODO Do this without hacking try except. (This is soposed to except)
-        try:
+        if os.path.isfile(self.pidfile):
             self.Scream.dbg('start','open pidfile {}'.format(self.pidfile))
             with open(self.pidfile,'r') as pf:
-
                 pid = int(pf.read().strip())
-        except IOError:
+        else:
             pid = None
-            self.Scream.dbg('start','IOError')
+            self.Scream.dbg('start','No path to {}'.format(self.pidfile))
+        
     
         if pid:
             message = "pidfile {0} already exist. " + \
@@ -163,11 +171,15 @@ class Daemon:
         # TODO rewrite check for process first.
         # Kill signals https://unix.stackexchange.com/questions/317492/list-of-kill-signals
         try:
-            while 1:
-                self.Scream.dbg('stop','In the infinite loop')
+            TimeStart = time.time()
+            while (time.time() - TimeStart) < self.TimeOut:
+                self.Scream.dbg('stop','Asking nicely')
                 os.kill(pid, signal.SIGTERM)
                 time.sleep(0.1)
-                # os.kill(pid, signal.SIGKILL)
+            
+            self.Scream.dbg('stop','No longer asking nicely')
+            os.kill(pid, signal.SIGKILL)
+            
         except OSError as err:
             e = str(err.args)
             if e.find("No such process") > 0:
