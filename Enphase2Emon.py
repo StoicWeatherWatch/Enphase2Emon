@@ -10,7 +10,7 @@ ReceiveEnphaseStream.py
 WriteToEmoncmsHTTP.py
 """
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 __author__ = "SWW"
 
 # In Daemon form, this must be given the full path. 
@@ -20,12 +20,13 @@ CONFIG_FILE = '/home/pi/Enphase2emon/Enphase2Emon.cfg'
 import ReceiveEnphaseStream
 import WriteToEmoncmsHTTP
 
-from Screamer import Screamer
-
 
 import json
 import configparser
 import time
+
+import logging
+from systemd.journal import JournalHandler as systemdJournalHandler
 
 # Program Flow
 # Read config file
@@ -46,15 +47,52 @@ import time
 # Read config file
 # TODO use try except
 def MainLoop():
-    Scream = Screamer.LocalOnly('Enphase2Emon')
-    Scream.dbg('MainLoop','Have Screamer')
+    #Setup Loging
+    LG = logging.getLogger('Enphase2Emon')
+    
+    #Scream.dbg('MainLoop','Have Screamer')
+    
     config = configparser.ConfigParser()
-    Scream.dbg('MainLoop','Have configparser')
+    #Scream.dbg('MainLoop','Have configparser')
     
     # ConfigParser.read "Files that cannot be opened are silently ignored;       
     # Return list of successfully read files.\n        "
     ListOfRead = config.read(CONFIG_FILE)
-    Scream.dbg('MainLoop','config.read found {}'.format(ListOfRead))
+    #Scream.dbg('MainLoop','config.read found {}'.format(ListOfRead))
+    
+    # Continue with logging setup
+    if config['Logging']['log_level'] == 'DEBUG':
+        LogLevel = logging.DEBUG
+        LogLevelN = 10
+    elif config['Logging']['log_level'] == 'INFO':
+        LogLevel = logging.INFO
+        LogLevelN = 20
+    elif config['Logging']['log_level'] == 'WARNING':
+        LogLevel = logging.WARNING
+        LogLevelN = 30
+    elif config['Logging']['log_level'] == 'CRITICAL':
+        LogLevel = logging.CRITICAL
+        LogLevelN = 50
+    else:
+        # default and if not correct config is ERROR
+        LogLevel = logging.ERROR
+        LogLevelN = 40
+        
+    LGformatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    
+    # Are we logging to a file
+    if len(config['Logging']['Log_File']) > 1:
+        FLHandler = logging.FileHandler(config['Logging']['Log_File'])
+        FLHandler.setLevel(LogLevel)
+        FLHandler.setFormatter(LGformatter)
+        LG.addHandler(FLHandler)
+    if config['Logging'].getboolean('Log_To_systemd_journal', fallback=False):
+        SJHandler = systemdJournalHandler(level=LogLevel)
+        SJHandler.setFormatter(LGformatter)
+        LG.addHandler(SJHandler)
+
+
+    
 
     # print(config['Envoy']['ipadd'])
     # print(type(config['Envoy']['ipadd']))
@@ -64,17 +102,17 @@ def MainLoop():
     # print(type(config['Settings'].getboolean('smoothing')))
 
     StripPrefix = config['Envoy'].getint('num_chars_strip')
-    Scream.dbg('MainLoop','StripPrefix {}'.format(StripPrefix))
+    LG.debug('MainLoop StripPrefix {}'.format(StripPrefix))
 
     PostInter = config['Settings'].getint('UpdateInterval')
-    Scream.dbg('MainLoop','PostInter {}'.format(PostInter))
+    LG.debug('MainLoop PostInter {}'.format(PostInter))
 
     # Setup the object to post to emoncms
     poster = WriteToEmoncmsHTTP.EMONPostHTTP(CONFIG_FILE)
-    Scream.dbg('MainLoop','poster ready')
+    LG.debug('MainLoop poster ready')
 
     TimeLast = time.time()
-    Scream.dbg('MainLoop','TimeLast {}'.format(TimeLast))
+    LG.debug('MainLoop TimeLast {}'.format(TimeLast))
 
     # Loop over stream
     for LineIn in ReceiveEnphaseStream.DataStream(config['Envoy']['ipadd'],
@@ -83,17 +121,17 @@ def MainLoop():
                                                     config['Envoy']['userpass']):
         #print(LineIn.decode("utf-8")[6:])
         #print('\n')
-        Scream.dbg('MainLoop','LineIn received')
+        LG.debug('MainLoop LineIn received')
         # The output has initial characters that need to be striped. Thus StripPrefix
         LineDict = json.loads(LineIn.decode("utf-8")[StripPrefix:])
-        Scream.dbg('MainLoop','LineDict decoded')
+        LG.debug('MainLoop LineDict decoded')
         #print(LineDict)
         #print('\n')
         #print(LineDict["production"]["ph-a"]["p"])
         #print(type(LineDict["production"]["ph-a"]["p"]))
         #print('\n')
         if (time.time() - TimeLast) > PostInter:
-            Scream.dbg('MainLoop','time good - posting')
+            LG.debug('MainLoop time good - posting')
             poster.PostToEMON(LineDict)
             TimeLast = time.time()
             
