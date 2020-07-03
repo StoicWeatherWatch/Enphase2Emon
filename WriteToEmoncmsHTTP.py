@@ -10,7 +10,7 @@ WriteToEmoncmsHTTP handles writing data to Emoncms.
 import configparser
 import json
 import requests
-
+import logging
 
 
 #http://emonpi.local/input/post?node=mynode&fulljson={"power1":100,"power2":200,"power3":300}&apikey=fc9c9ae50942b35f8a1baa67649e301b
@@ -30,9 +30,11 @@ class EMONPostHTTP:
     """
     
     def __init__(self, ConfigFileName):
-        print('EMONPostHTTP __init__')
+        self.LG = logging.getLogger('Enphase2Emon.EMONPostHTTP')
+        self.LG.info('EMONPostHTTP __init__')
         config = configparser.ConfigParser()
         config.read(ConfigFileName)
+        
         
         # Which phases are we interested in
         self.Phases = {}
@@ -42,6 +44,8 @@ class EMONPostHTTP:
             self.Phases.update({'ph-b':config['Data']['ph-b-name']})
         if config['Data'].getboolean('ph-c'):
             self.Phases.update({'ph-c':config['Data']['ph-c-name']})
+        
+        self.LG.debug('self.Phases {}'.format(str(self.Phases)))
         
         #print(self.Phases)
         
@@ -65,6 +69,9 @@ class EMONPostHTTP:
         #print(self.SolarProductionDataTypes)
         #print(self.MainsConsumptionDataTypes)
         #print(self.TotalConsumptionDataTypes)
+        self.LG.debug('self.SolarProductionDataTypes {}'.format(str(self.SolarProductionDataTypes)))
+        self.LG.debug('self.MainsConsumptionDataTypes {}'.format(str(self.MainsConsumptionDataTypes)))
+        self.LG.debug('self.TotalConsumptionDataTypes {}'.format(str(self.TotalConsumptionDataTypes)))
         
         self.EmonNodeName = config['Emoncms']['Node_Name']
         
@@ -93,9 +100,10 @@ class EMONPostHTTP:
                 DataOutDict.update({DataName:DataPoint})
         
         #print(DataOutDict)
+        self.LG.debug('DataOutDict {}'.format(str(DataOutDict)))
         
         DataString = json.dumps(DataOutDict, separators=(',', ':'))
-        print(type(DataString))
+
         
         return DataString # JSON string for output
     
@@ -110,16 +118,19 @@ class EMONPostHTTP:
                         '&apikey=',
                         self.APIKey])
         
-        print(SendString)
+        #print(SendString)
+        self.LG.debug('SendString {}'.format(SendString))
         
         result = requests.get(SendString)
         
-        print(result)
+        #print(result)
+        self.LG.debug('result {}'.format(result))
         
         
     def PostToEMON(self, DataBlockDict):
         DataString = self.ProcessData(DataBlockDict)
-        print(DataString)
+        #print(DataString)
+        self.LG.debug('DataString {}'.format(DataString))
         self.SendData(DataString)
             
 #http://192.168.0.8/input/post?node=EphaseData&fulljson={"Solar_Power_K":411.886,"Mains_Power_K":1341.243,"Solar_Power_L":412.632,"Mains_Power_L":1400.988}&apikey=809ebd23640fbddb475af911ad91e7c0
