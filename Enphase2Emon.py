@@ -64,6 +64,7 @@ def MainLoop():
     if config['Logging']['log_level'] == 'DEBUG':
         LogLevel = logging.DEBUG
         LogLevelN = 10
+        print('DEBUG')
     elif config['Logging']['log_level'] == 'INFO':
         LogLevel = logging.INFO
         LogLevelN = 20
@@ -78,11 +79,14 @@ def MainLoop():
         LogLevel = logging.ERROR
         LogLevelN = 40
         
+    
+        
     LGformatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     
     # Are we logging to a file
     if len(config['Logging']['Log_File']) > 1:
         FLHandler = logging.FileHandler(config['Logging']['Log_File'])
+        print(config['Logging']['Log_File'])
         FLHandler.setLevel(LogLevel)
         FLHandler.setFormatter(LGformatter)
         LG.addHandler(FLHandler)
@@ -90,7 +94,15 @@ def MainLoop():
         SJHandler = systemdJournalHandler(level=LogLevel)
         SJHandler.setFormatter(LGformatter)
         LG.addHandler(SJHandler)
-
+    
+    # This line is necessary because we must also set the minimum for the logger overall
+    LG.setLevel(LogLevel)
+    
+    LG.critical(' critical test')
+    LG.error(' error test')
+    LG.warning(' warning test')
+    LG.info(' info test')
+    LG.debug(' debug test')
 
     
 
