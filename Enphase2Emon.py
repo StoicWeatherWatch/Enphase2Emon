@@ -10,7 +10,7 @@ ReceiveEnphaseStream.py
 WriteToEmoncmsHTTP.py
 """
 
-__version__ = "0.0.5"
+__version__ = "0.0.7"
 __author__ = "SWW"
 
 # In Daemon form, this must be given the full path. 
