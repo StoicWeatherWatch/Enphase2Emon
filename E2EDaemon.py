@@ -1,89 +1,35 @@
 #!/usr/bin/env python3
-'''
-# This is an example of a daemon subclass. Based on 
+
+# This is an example of a daemon call. Based on 
 #https://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 
-# Put the .pid file some place nice in DAEMON_LOCATION
-
-To use with a systemctl service, on Raspberry Pi or simular systems,
-create a .service file such as below
-
-# exampleD.service
-[Unit]
-Description=Example service
-After=network.target
-
-[Service]
-ExecStart=/home/pi/<DaemonDirectory>/ExampleDaemon.py start
-ExecReload=/home/pi/<DaemonDirectory>/ExampleDaemon.py restart
-ExecStop=/home/pi/<DaemonDirectory>/ExampleDaemon.py stop
-WorkingDirectory=/home/pi/<DaemonDirectory>/
-StandardOutput=inherit
-StandardError=inherit
-Restart=on-abnormal
-RestartSec=10
-User=pi
-Type=forking
-PIDFile=/tmp/daemon-example.pid
-
-
-[Install]
-WantedBy=multi-user.target
-
-# End of exampleD.service
-
-Put the .service file in /etc/systemd/system/ or equivalent.
-
-Terminal commands
-# Run this after any change or addition to the .service file
-sudo systemctl daemon-reload
-
-
-sudo systemctl start exampleD.service
-sudo systemctl stop exampleD.service
-# restart runs the stop command in ExecStop then the start command in ExecStart
-sudo systemctl restart exampleD.service
-# reload runs ExecReload.
-#  Convention is to reload config files without stopping and starting. 
-#  Our simple example does not follow this.
-sudo systemctl reload exampleD.service
-
-# To start every time the computer starts, use enable
-sudo systemctl enable exampleD.service
-sudo systemctl disable exampleD.service
-
-sudo systemctl status exampleD.service
-
-'''
+# Put the .pid file some place nice
  
 import sys
-# time only needed for demo
-import time
 
 from GenericDaemon import Daemon
+import Enphase2Emon
 
-# import <Some Module I Made>
+DAEMON_PID_LOCATION = '/tmp/daemon-Enphase2Emon.pid'
 
-DAEMON_LOCATION = '/tmp/daemon-example.pid'
- 
-class MyDaemon(Daemon):
+class E2EDaemon(Daemon):
     def run(self):
-        self.LG.info('MyDaemon run()')
-        # Instantiate and run <Some Module I Made>
-        while True:
-            time.sleep(1)
+        self.LG.info('E2EDaemon run()')
+        Enphase2Emon.MainLoop()
+        self.LG.warning('E2EDaemon run() ending - should never get here')
  
+ # This works for running directly. However a service does not call with 2 arg - unless you put them in the .service file
 if __name__ == "__main__":
-    daemon = MyDaemon(DAEMON_LOCATION)
+    TheDaemon = E2EDaemon(DAEMON_PID_LOCATION)
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
-            daemon.start()
+            TheDaemon.start()
         elif 'stop' == sys.argv[1]:
-            daemon.stop()
+            TheDaemon.stop()
         elif 'restart' == sys.argv[1]:
-            daemon.restart()
+            TheDaemon.restart()
         else:
-            print "Unknown command"
+            print("Unknown command")
             sys.exit(2)
         sys.exit(0)
     else:
