@@ -10,7 +10,7 @@ ReceiveEnphaseStream.py
 WriteToEmoncmsHTTP.py
 """
 
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 __author__ = "SWW"
 
 # In Daemon form, this must be given the full path. 
@@ -26,6 +26,7 @@ import configparser
 import time
 import signal
 import sys
+import traceback
 
 import logging
 from systemd.journal import JournalHandler as systemdJournalHandler
@@ -107,7 +108,7 @@ def MainLoop():
     #LG.debug(' debug test')
     #LG.exception(msg, *args, **kwargs)
     
-    # Signal Handeler
+    # Signal Handeler - for exiting gracefully on SIGTERM
     SoftKillReceived = False
     SignalNumReceived = 0
     SignalFrameReceived = None
@@ -137,8 +138,10 @@ def MainLoop():
     def GracefulExitCheck():
         nonlocal SoftKillReceived
         nonlocal SignalNumReceived
+        nonlocal SignalFrameReceived
         if SoftKillReceived:
             LG.info('Executing signalNumber: {}'.format(SignalNumReceived))
+            LG.debug('Signal Frame was: {}'.format(SignalFrameReceived))
             LG.info('EXITING')
             sys.exit(0)
 
@@ -165,30 +168,82 @@ def MainLoop():
     GracefulExitCheck()
     
     # Loop over stream
-    for LineIn in ReceiveEnphaseStream.DataStream(config['Envoy']['ipadd'],
-                                                    config['Envoy']['path'],
-                                                    config['Envoy']['userid'],
-                                                    config['Envoy']['userpass']):
+    try:
+        for LineIn in ReceiveEnphaseStream.DataStream(config['Envoy']['ipadd'],
+                                                        config['Envoy']['path'],
+                                                        config['Envoy']['userid'],
+                                                        config['Envoy']['userpass']):
         
-        GracefulExitCheck()
+            GracefulExitCheck()
         
-        LG.debug('MainLoop LineIn received')
+            LG.debug('MainLoop LineIn received')
         
-        # The output has initial characters that need to be striped. Thus StripPrefix
-        LineDict = json.loads(LineIn.decode("utf-8")[StripPrefix:])
-        LG.debug('MainLoop LineDict decoded')
+            try:
+                # The output has initial characters that need to be striped. Thus StripPrefix
+                LineDict = json.loads(LineIn.decode("utf-8")[StripPrefix:])
+                LG.debug('MainLoop LineDict decoded')
+            except json.JSONDecodeError as err:
+                LG.error('Error receiving decoding line in with JSON. Will quit and hopefully be restarted')
+                LG.debug(err.msg)
+                LG.debug(err.doc)
+                LG.debug(err.pos)
+                LG.debug(traceback.format_exc())
+                LG.exception(err)
+                LG.error('EXITING with error 16')
+                sys.exit(16)
         
-        GracefulExitCheck()
+            GracefulExitCheck()
         
-        if (time.time() - TimeLast) > PostInter:
-            LG.debug('MainLoop time good - posting')
-            poster.PostToEMON(LineDict)
-            TimeLast = time.time()
+            if (time.time() - TimeLast) > PostInter:
+                LG.debug('MainLoop time good - posting')
+                try:
+                    poster.PostToEMON(LineDict)
+                except WriteToEmoncmsHTTP.E2EPosterError_Fatal as err:
+                    LG.error('Error sending data to EmonCMS. Will quit and hopefully be restarted')
+                    LG.debug(err.location)
+                    LG.debug(err.message)
+                    LG.debug(err)
+                    if err.cause.request:
+                        LG.debug(err.cause.request)
+                    if err.cause.response:
+                        LG.debug(err.cause.response)
+                    LG.debug(traceback.format_exc())
+                    LG.exception(err.cause)
+                    #LG.debug(repr(traceback.format_tb(err.cause.tb)))
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    LG.debug(repr(traceback.format_tb(exc_traceback)))
+                    LG.error('EXITING with error 17')
+                    sys.exit(17)
+                    
+                TimeLast = time.time()
         
-        GracefulExitCheck()
-        
+            GracefulExitCheck()
             
-            
+    except ReceiveEnphaseStream.E2EReceiveError_Fatal as err:
+        LG.error('Error receiving data stream. Will quit and hopefully be restarted')
+        LG.debug(err.location)
+        LG.debug(err.message)
+        LG.debug(err)
+        if err.cause.request:
+            LG.debug(err.cause.request)
+        if err.cause.response:
+            LG.debug(err.cause.response)
+        LG.debug(traceback.format_exc())
+        LG.exception(err.cause)
+        #LG.debug(repr(traceback.format_tb(err.cause.tb)))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        LG.debug(repr(traceback.format_tb(exc_traceback)))
+        LG.error('EXITING with error 15')
+        sys.exit(15)
+        
+    LG.error('Error left infinite loop. Should never reach this point.')
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    LG.debug(traceback.format_exc())
+    LG.debug(repr(traceback.format_tb(exc_traceback)))
+    LG.error('EXITING with error 18')
+    # Standard exit codes
+    # https://freedesktop.org/software/systemd/man/systemd.exec.html#id-1.20.8
+    sys.exit(18) 
 
 if __name__ == "__main__":
     print("Running Enphase2Emon as __main__")
