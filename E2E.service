@@ -1,6 +1,8 @@
 [Unit]
 Description=Enphase2emon service
 After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 ExecStart=/home/pi/Enphase2emon/E2EDaemon.py start
@@ -9,7 +11,7 @@ ExecStop=/home/pi/Enphase2emon/E2EDaemon.py stop
 WorkingDirectory=/home/pi/Enphase2emon/
 StandardOutput=inherit
 StandardError=inherit
-Restart=on-abnormal
+Restart=on-failure
 RestartSec=10
 User=pi
 Type=forking
