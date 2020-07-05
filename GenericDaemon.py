@@ -27,7 +27,7 @@ os.path.exists('/proc/' + str(pid))
 and change it to something that will work on your system.
 
 """
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 __author__ = "SWW"
 
 #https://web.archive.org/web/20160305151936/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
@@ -47,7 +47,7 @@ from systemd.journal import JournalHandler as systemdJournalHandler
 TIME_OUT = 10
 
 # Logs to output - Set to: DEBUG INFO WARNING ERROR CRITICAL
-LOG_LEVEL = logging.WARNING
+LOG_LEVEL = logging.INFO
 KEEP_LOG = True
 
 
@@ -64,7 +64,8 @@ class Daemon:
         # Setup logging
         if KEEP_LOG:
             self.LG = logging.getLogger('GenericDaemon')
-            LGformatter = logging.Formatter('%(asctime)s - %(name)s:%(funcName)s %(lineno)d - %(levelname)s: %(message)s', datefmt='%y-%m-%d %H:%M:%S')
+            #Optional datefmt='%y-%m-%d %H:%M:%S'
+            LGformatter = logging.Formatter('%(asctime)s - %(name)s:%(funcName)s %(lineno)d - %(levelname)s: %(message)s')
             #https://docs.python.org/3.8/library/logging.html#logrecord-attributes
         
             # Setup for a systemd journal. Change the log handler for other logging.
