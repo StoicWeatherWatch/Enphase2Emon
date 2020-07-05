@@ -1,18 +1,75 @@
 #!/usr/bin/env python3
-
-# This is an example of a daemon call. Based on 
+'''
+# This is an example of a daemon subclass. Based on 
 #https://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 
-# Put the .pid file some place nice
+# Put the .pid file some place nice in DAEMON_LOCATION
+
+To use with a systemctl service, on Raspberry Pi or simular systems,
+create a .service file such as below
+
+# exampleD.service
+[Unit]
+Description=Example service
+After=network.target
+
+[Service]
+ExecStart=/home/pi/<DaemonDirectory>/ExampleDaemon.py start
+ExecReload=/home/pi/<DaemonDirectory>/ExampleDaemon.py restart
+ExecStop=/home/pi/<DaemonDirectory>/ExampleDaemon.py stop
+WorkingDirectory=/home/pi/<DaemonDirectory>/
+StandardOutput=inherit
+StandardError=inherit
+Restart=on-abnormal
+RestartSec=10
+User=pi
+Type=forking
+PIDFile=/tmp/daemon-example.pid
+
+
+[Install]
+WantedBy=multi-user.target
+
+# End of exampleD.service
+
+Put the .service file in /etc/systemd/system/ or equivalent.
+
+Terminal commands
+# Run this after any change or addition to the .service file
+sudo systemctl daemon-reload
+
+
+sudo systemctl start exampleD.service
+sudo systemctl stop exampleD.service
+# restart runs the stop command in ExecStop then the start command in ExecStart
+sudo systemctl restart exampleD.service
+# reload runs ExecReload.
+#  Convention is to reload config files without stopping and starting. 
+#  Our simple example does not follow this.
+sudo systemctl reload exampleD.service
+
+# To start every time the computer starts, use enable
+sudo systemctl enable exampleD.service
+sudo systemctl disable exampleD.service
+
+sudo systemctl status exampleD.service
+
+'''
  
 import sys
+# time only needed for demo
 import time
+
 from GenericDaemon import Daemon
+
+# import <Some Module I Made>
 
 DAEMON_LOCATION = '/tmp/daemon-example.pid'
  
 class MyDaemon(Daemon):
     def run(self):
+        self.LG.info('MyDaemon run()')
+        # Instantiate and run <Some Module I Made>
         while True:
             time.sleep(1)
  
@@ -32,3 +89,4 @@ if __name__ == "__main__":
     else:
         print("usage: %s start|stop|restart" % sys.argv[0])
         sys.exit(2)
+        
