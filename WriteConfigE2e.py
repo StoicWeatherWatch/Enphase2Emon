@@ -2,7 +2,7 @@ import configparser
 config = configparser.ConfigParser()
 
 
-EnvoyDict = {'IPadd':'192.168.0100',
+EnvoyDict = {'IPadd':'192.168.0.0100',
                 'path':'/stream/meter/',
                 'userID':'installer',
                 'userPass':'<Installer Password>',
@@ -13,9 +13,11 @@ EmoncmsDict = {'IPadd':'127.0.0.1',
                 'Node_Name':'EphaseData'}
                 
 DataDict = {'production_p':True,
-            'net-consumption_P':True,
-            'total-consumption_P':False,
+            'net-consumption_p':True,
+            'net-consumption_v':True,
+            'total-consumption_p':False,
             'p_name':'Power',
+            'v_name':'Voltage',
             'ph-a':True, 
             'ph-b':True, 
             'ph-c':False,
@@ -25,9 +27,19 @@ DataDict = {'production_p':True,
 
 SettingsDict = {'UpdateInterval':5,
                 'Smoothing':False}
+                
+				
 
-ScreamDict = {'Log_Debug_Msg':False,
-				'Print_Debug_Msg_To_Terminal':True}
+# CRITICAL
+# ERROR
+# WARNING
+# INFO
+# DEBUG
+# NOTSET
+
+LogDict = {'Log_Level':'INFO',
+			'Log_File':'',
+			'Log_To_systemd_journal':True}
                 
 config['Envoy'] = EnvoyDict
 config['Emoncms']   = EmoncmsDict
@@ -35,7 +47,7 @@ config['Settings']  = SettingsDict
 
 config['Data'] = DataDict
 
-config['Screamer'] = ScreamDict
+config['Logging'] = LogDict
 
 
 
