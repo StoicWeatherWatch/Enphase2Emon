@@ -11,9 +11,28 @@ import configparser
 import json
 import requests
 import logging
+import sys
 
+# If we go longer than this time without any activity, it will except Timeout
+SEND_TIME_OUT = 5
 
 #http://emonpi.local/input/post?node=mynode&fulljson={"power1":100,"power2":200,"power3":300}&apikey=fc9c9ae50942b35f8a1baa67649e301b
+
+class E2EPosterError_Fatal(Exception):
+    """
+    Any error that cannot be recovered. Will cause the main program to quit. 
+    Hopefully the daemon will restart.
+    """
+    def __init__(self, location, message, cause):
+        """
+        location : String where in the code it comes from
+        message : String Description
+        cause : a caught exception that caused the problem. Or None.
+        """
+        self.location = location
+        self.message = message
+        self.cause = cause
+
 
 class EMONPostHTTP:
     """
@@ -47,7 +66,6 @@ class EMONPostHTTP:
         
         self.LG.debug('self.Phases {}'.format(str(self.Phases)))
         
-        #print(self.Phases)
         
         # Which variables are we passing to EmonCMS
         self.SolarProductionDataTypes = {}
@@ -66,9 +84,7 @@ class EMONPostHTTP:
             if config['Data'].getboolean('total-consumption_' + DataType):
                 self.TotalConsumptionDataTypes.update({DataType:config['Data'][DataType+'_name']})
                 
-        #print(self.SolarProductionDataTypes)
-        #print(self.MainsConsumptionDataTypes)
-        #print(self.TotalConsumptionDataTypes)
+
         self.LG.debug('self.SolarProductionDataTypes {}'.format(str(self.SolarProductionDataTypes)))
         self.LG.debug('self.MainsConsumptionDataTypes {}'.format(str(self.MainsConsumptionDataTypes)))
         self.LG.debug('self.TotalConsumptionDataTypes {}'.format(str(self.TotalConsumptionDataTypes)))
@@ -99,7 +115,7 @@ class EMONPostHTTP:
                 DataName = 'TotalMainsSolar' + '_' + DataName + '_' + PhaseName
                 DataOutDict.update({DataName:DataPoint})
         
-        #print(DataOutDict)
+
         self.LG.debug('DataOutDict {}'.format(str(DataOutDict)))
         
         DataString = json.dumps(DataOutDict, separators=(',', ':'))
@@ -118,19 +134,33 @@ class EMONPostHTTP:
                         '&apikey=',
                         self.APIKey])
         
-        #print(SendString)
+
         self.LG.debug('SendString {}'.format(SendString))
+        try:
+            result = requests.get(SendString, timeout=SEND_TIME_OUT)
+            
+            raise requests.exceptions.HTTPError(request=None,response=None)
+            result.raise_for_status() 
+        except requests.exceptions.HTTPError as err:
+            if (result.status_code) and isinstance(result.status_code, int):
+                StatusCode = result.status_code
+            else:
+                StatusCode = None
+            tb = sys.exc_info()[2]
+            raise E2EPosterError_Fatal('WriteToEmoncmsHTTP SendData(*) - requests.get(*)', 'HTTP status code {}'.format(StatusCode), err).with_traceback(tb)
+        except requests.exceptions.Timeout  as err:
+            tb = sys.exc_info()[2]
+            raise E2EPosterError_Fatal('WriteToEmoncmsHTTP SendData(*) - requests.get(*)', 'Request timed out', err).with_traceback(tb)
+        except requests.exceptions.RequestException  as err:
+            tb = sys.exc_info()[2]
+            raise E2EPosterError_Fatal('WriteToEmoncmsHTTP SendData(*) - requests.get(*)', 'Unknown HTTP error', err).with_traceback(tb)
         
-        result = requests.get(SendString)
-        
-        #print(result)
+
         self.LG.debug('result {}'.format(result))
         
         
     def PostToEMON(self, DataBlockDict):
         DataString = self.ProcessData(DataBlockDict)
-        #print(DataString)
         self.LG.debug('DataString {}'.format(DataString))
         self.SendData(DataString)
             
-#http://192.168.0.8/input/post?node=EphaseData&fulljson={"Solar_Power_K":411.886,"Mains_Power_K":1341.243,"Solar_Power_L":412.632,"Mains_Power_L":1400.988}&apikey=809ebd23640fbddb475af911ad91e7c0
