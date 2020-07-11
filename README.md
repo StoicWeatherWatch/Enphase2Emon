@@ -39,7 +39,7 @@ Installation
 
 Test if your envoy will work with this by pointing a web browser to 
 
-http://<IP Address of Envoy>/stream/meter/
+          http://*IP Address of Envoy*/stream/meter/
 
 Enter user installer and the installer password. You should get a stream of data that continually updates. If not, this program may not work. The installer password is NOT the last few digits of your serial number. 
 
