@@ -44,7 +44,8 @@ http://<IP Address of Envoy>/stream/meter/
 Enter user installer and the installer password. You should get a stream of data that continually updates. If not, this program may not work. The installer password is NOT the last few digits of your serial number. 
 
 Download the files to your preferred install directory
-git clone https://github.com/StoicWeatherWatch/Enphase2Emon.git
+
+          git clone https://github.com/StoicWeatherWatch/Enphase2Emon.git
 
 Edit Enphase2Emon.cfg. Set the IP address of the Envoy S, the install password, the API key for EmonCMS and any other settings you wish to change. If you are running EmonCMS on a Raspberry Pi with local logging and running this program on the same Raspberry Pi that keep the IP address under Emoncms at 127.0.0.1. If EmonCMS runs on some other computer from the one running this program, enter its IP address in place of 127.0.0.1.
 
@@ -54,22 +55,24 @@ Make certain that /tmp/ is mounted and writable. If not change DAEMON_PID_LOCATI
 
 Make E2EDaemon.py executable. For example 
 
-chmod 770 E2EDaemon.py
+          chmod 770 E2EDaemon.py
 
 Move E2E.service into systemd/system/. On Raspberry Pi
 
-sudo cp E2E.service /etc/systemd/system/
+          sudo cp E2E.service /etc/systemd/system/
 
 Reload the daemon list
 
-sudo systemctl daemon-reload
+          sudo systemctl daemon-reload
 
 Start and enable to automatically run on restart
-sudo systemctl start E2E.service
-sudo systemctl enable E2E.service
+
+          sudo systemctl start E2E.service
+          sudo systemctl enable E2E.service
 
 Run
-sudo systemctl status E2E.service
+
+          sudo systemctl status E2E.service
 
 The status should show some information notices form GenericDaemon and Enphase2Emon.
 
