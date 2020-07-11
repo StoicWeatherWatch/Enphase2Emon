@@ -12,6 +12,8 @@ create a .service file such as below
 [Unit]
 Description=Example service
 After=network.target
+StartLimitIntervalSec=180
+StartLimitBurst=6
 
 [Service]
 ExecStart=/home/pi/<DaemonDirectory>/ExampleDaemon.py start
@@ -20,10 +22,14 @@ ExecStop=/home/pi/<DaemonDirectory>/ExampleDaemon.py stop
 WorkingDirectory=/home/pi/<DaemonDirectory>/
 StandardOutput=inherit
 StandardError=inherit
-Restart=on-abnormal
+
+# Options on-failure on-abnormal etc
+Restart=on-failure
 RestartSec=10
 User=pi
 Type=forking
+
+# This should match DAEMON_LOCATION below.
 PIDFile=/tmp/daemon-example.pid
 
 
@@ -45,7 +51,7 @@ sudo systemctl stop exampleD.service
 sudo systemctl restart exampleD.service
 # reload runs ExecReload.
 #  Convention is to reload config files without stopping and starting. 
-#  Our simple example does not follow this.
+#  Our simple example does not follow this. Reload calls restart from GenericDaemon
 sudo systemctl reload exampleD.service
 
 # To start every time the computer starts, use enable
@@ -69,7 +75,7 @@ DAEMON_LOCATION = '/tmp/daemon-example.pid'
 class MyDaemon(Daemon):
     def run(self):
         self.LG.info('MyDaemon run()')
-        # Instantiate and run <Some Module I Made>
+        # Instantiate and run <Some Module I Made> below.
         while True:
             time.sleep(1)
  
