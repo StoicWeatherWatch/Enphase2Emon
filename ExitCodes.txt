@@ -1,0 +1,18 @@
+http://www.tldp.org/LDP/abs/html/exitcodes.html
+https://freedesktop.org/software/systemd/man/systemd.exec.html#id-1.20.8
+
+0   Normal, Success
+1   Generic Fail
+
+2 - 7     Special meanings depending on who you ask
+64 - 78   Special meanings depending on who you ask
+126 - 128 Special meanings depending on who you ask
+128+n     Special meanings depending on who you ask
+130       Special meanings depending on who you ask
+200 - 242 Special meanings depending on who you ask
+
+256 and higher  Very bad idea
+
+
+
+11 - 50   Should be safe for program specific errors
