@@ -13,10 +13,9 @@ import requests
 import logging
 import sys
 
-# If we go longer than this time without any activity, it will except Timeout
+# If we go longer than this time without any response from EmonCMS, it will except Timeout
 SEND_TIME_OUT = 5
 
-#http://emonpi.local/input/post?node=mynode&fulljson={"power1":100,"power2":200,"power3":300}&apikey=fc9c9ae50942b35f8a1baa67649e301b
 
 class E2EPosterError_Fatal(Exception):
     """
@@ -49,8 +48,10 @@ class EMONPostHTTP:
     """
     
     def __init__(self, ConfigFileName):
+        # <Main Logger>.<Sub Logger> should inherit the configuration from the main
         self.LG = logging.getLogger('Enphase2Emon.EMONPostHTTP')
         self.LG.info('EMONPostHTTP __init__')
+        
         config = configparser.ConfigParser()
         config.read(ConfigFileName)
         
@@ -89,6 +90,7 @@ class EMONPostHTTP:
         self.LG.debug('self.MainsConsumptionDataTypes {}'.format(str(self.MainsConsumptionDataTypes)))
         self.LG.debug('self.TotalConsumptionDataTypes {}'.format(str(self.TotalConsumptionDataTypes)))
         
+        # This is the node label that appears in EmonCMS
         self.EmonNodeName = config['Emoncms']['Node_Name']
         
         self.IPadd = config['Emoncms']['ipadd']
@@ -97,6 +99,9 @@ class EMONPostHTTP:
         
         
     def ProcessData(self, DataBlockDict):
+        """
+        Extract desired data from input dictionary and format for upload
+        """
         DataOutDict = {}
         for PhaseKey, PhaseName in self.Phases.items():
             # Solar Production
@@ -120,10 +125,13 @@ class EMONPostHTTP:
         
         DataString = json.dumps(DataOutDict, separators=(',', ':'))
 
-        
         return DataString # JSON string for output
     
+    
     def SendData(self, DataString):
+        """
+        Send to EmonCMS
+        """
         # Assemble http string
         SendString = ''.join(['http://', 
                         self.IPadd,
@@ -134,12 +142,11 @@ class EMONPostHTTP:
                         '&apikey=',
                         self.APIKey])
         
-
         self.LG.debug('SendString {}'.format(SendString))
+        
         try:
             result = requests.get(SendString, timeout=SEND_TIME_OUT)
             
-            raise requests.exceptions.HTTPError(request=None,response=None)
             result.raise_for_status() 
         except requests.exceptions.HTTPError as err:
             if (result.status_code) and isinstance(result.status_code, int):
