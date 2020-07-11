@@ -17,8 +17,8 @@ To use:
     Subclass and override run() with the code you want to run. Instantiating takes
     a full path to a PID file. This file will be created to hold the process ID.
 
-Logging is designed for a systemd journal (Raspberry Pi etc). Change the logging handler
-(in __init__) for other options. Or set KEEP_LOG = False
+Logging is designed for a systemd journal (Raspberry Pi etc). This requires systemd-python.
+Change the logging handler (in __init__) for other options. Or set KEEP_LOG = False
 
 The process checks assume that /proc/ is mounted. 
 https://man7.org/linux/man-pages/man5/proc.5.html
@@ -27,7 +27,7 @@ os.path.exists('/proc/' + str(pid))
 and change it to something that will work on your system.
 
 """
-__version__ = "0.0.8"
+__version__ = "0.1.0"
 __author__ = "SWW"
 
 #https://web.archive.org/web/20160305151936/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
@@ -40,6 +40,13 @@ import atexit
 import signal
 
 import logging
+
+# Requires pip3 install systemd-python
+# To remove this dependency, remove the systemd.journal import line below
+#  and lines referencing systemdJournalHandler or SJHandler below in init.
+#  Ideally replace it with some other logging handler. 
+#  However, for quick and dirty switching off of logging,
+#  add in place of the removed lines in init: self.LG.addHandler(logging.NullHandler())
 from systemd.journal import JournalHandler as systemdJournalHandler
 
 
@@ -125,13 +132,14 @@ class Daemon:
             self.LG.warning('fork #2 failed: {0}'.format(err))
             sys.exit(1) 
     
-        # redirect standard file descriptors
+        # redirect standard file descriptors to disappear into the aether.
         sys.stdout.flush()
         sys.stderr.flush()
         si = open(os.devnull, 'r')
         so = open(os.devnull, 'a+')
         se = open(os.devnull, 'a+')
 
+        # I think this points standard out etc to null but I am not certain.
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
@@ -145,7 +153,6 @@ class Daemon:
         self.LG.debug('pid {}'.format(pid))
         # w+ read and write for some reason. Overwrites if exists. Odd since all we do is write.
         with open(self.pidfile,'w+') as f:
-    
             f.write(pid + '\n')
             
         self.LG.debug('pid file written')
