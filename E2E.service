@@ -1,22 +1,50 @@
+# E2E.service runs Enphase2Emon as a daemon via E2EDaemon.py
+#  Enphase2Emon will transfer data from an Envoy to EmonCMS.
+#  Runs continuously in a loop
+
+# This file, E2E.service should be installed in the systemd/system/ directory. 
+#  On Raspberry Pi this is located in /etc/systemd/system/
+#  Use sudo to to place it there or make edits.
+
 [Unit]
-Description=Enphase2emon service
+Description=Enphase2Emon service - Python 3 Deamon
+
+# Activated late in the startup process
 After=network.target
-StartLimitIntervalSec=60
-StartLimitBurst=5
+
+# Will restart at most StartLimitBurst times in StartLimitIntervalSec seconds.
+# After that it will stop trying.
+StartLimitIntervalSec=180
+StartLimitBurst=6
 
 [Service]
+# These directories should point to the location of the Enphase2Emon files. 
+#  Change depending on where you install.
 ExecStart=/home/pi/Enphase2emon/E2EDaemon.py start
 ExecReload=/home/pi/Enphase2emon/E2EDaemon.py restart
 ExecStop=/home/pi/Enphase2emon/E2EDaemon.py stop
 WorkingDirectory=/home/pi/Enphase2emon/
+
+# Note that the Enphase2Emon.cfg file sets the location(s) for logging. 
+#  Changing these will not impact much.
 StandardOutput=inherit
 StandardError=inherit
+
+# on-failure means it will restart on an exit code other than 0.
+#  Enphase2Emon spits exit codes between 15 and 30 when dying from caught exceptions.
 Restart=on-failure
-RestartSec=10
+# Wait this long to attempt restart. 
+RestartSec=20
+
+# If you want to run this under a different user, create the user and change this
 User=pi
+
 Type=forking
+
+# This should match the DAEMON_PID_LOCATION set in E2EDaemon.py
 PIDFile=/tmp/daemon-Enphase2Emon.pid
 
 
 [Install]
 WantedBy=multi-user.target
+
