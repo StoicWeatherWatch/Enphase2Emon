@@ -20,10 +20,10 @@ StartLimitBurst=6
 [Service]
 # These directories should point to the location of the Enphase2Emon files. 
 #  Change depending on where you install.
-ExecStart=/home/pi/Enphase2emon/E2EDaemon.py start
-ExecReload=/home/pi/Enphase2emon/E2EDaemon.py restart
-ExecStop=/home/pi/Enphase2emon/E2EDaemon.py stop
-WorkingDirectory=/home/pi/Enphase2emon/
+ExecStart=/home/pi/Enphase2Emon/E2EDaemon.py start
+ExecReload=/home/pi/Enphase2Emon/E2EDaemon.py restart
+ExecStop=/home/pi/Enphase2Emon/E2EDaemon.py stop
+WorkingDirectory=/home/pi/Enphase2Emon/
 
 # Note that the Enphase2Emon.cfg file sets the location(s) for logging. 
 #  Changing these will not impact much.
