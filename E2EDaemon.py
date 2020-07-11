@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 
-# This is an example of a daemon call. Based on 
-#https://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
+"""
+This is a Python 3 daemon for Enphase2Emon which gets data from an Envoy S and
+transfers it to EmonCMS. 
 
-# Put the .pid file some place nice
+usage:
+E2EDaemon.py start|stop|restart
+
+
+"""
  
 import sys
 
 from GenericDaemon import Daemon
 import Enphase2Emon
 
+# This should match the PIDFile set in E2E.Service. Change both if you change one.
 DAEMON_PID_LOCATION = '/tmp/daemon-Enphase2Emon.pid'
 
 class E2EDaemon(Daemon):
@@ -31,7 +37,11 @@ if __name__ == "__main__":
         else:
             print("Unknown command")
             sys.exit(2)
-        sys.exit(0)
+        
+        # Enphase2Emon MainLoop() runs an infinite loop. It receives and handles 
+        #  SIGTERM and SIGINT and exits normally on those signals. 
+        #  It should never actually get to this line.
+        sys.exit(30)
     else:
         print("usage: %s start|stop|restart" % sys.argv[0])
         sys.exit(2)
